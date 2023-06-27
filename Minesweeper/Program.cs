@@ -1,8 +1,14 @@
-﻿using System;
+﻿// made by VasutasIsti in 2023
+// it's a little project, just for fun and learning
+// if you Can't understand some of the notes, it's maybe because it's in hungarian... without the accent dots... good luck googling it.
+
+using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Net;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Minesweeper
 {
@@ -15,12 +21,18 @@ namespace Minesweeper
 
         static void Main(string[] args)
         {
-            StartPlay();
-            while (inGame)
+            Console.WriteLine("Welcome to my ");
+            bool stay = true;
+            while (stay)
             {
-                GuessCordinate();
+                StartPlay();
+                while (inGame)
+                {
+                    GuessCordinate();
+                }
+                Console.WriteLine("Game Over! (New Game starts in 5 seconds.)");
+                Thread.Sleep(5000);
             }
-            Console.WriteLine("Game Over! (Press Enter to Exit)");
 
             Console.ReadKey();
         }
@@ -29,17 +41,27 @@ namespace Minesweeper
         {
             board = new Board(size, difficulty);
             board.InitializeCells();
-            board.PlaceBombs();
+            board.VisalizeBoard("normal");
+            board.PlaceBombs(FirstGuess());
             board.SetNeighbourCounts();
             board.VisalizeBoard("normal");
         }
 
+        static int[] FirstGuess()
+        {
+            int[] solution = new int[2];
+            int row = RequestRowFromPlayer();
+            int col = RequestColFromPlayer();
+            board.grid[row, col].isVisited = true;
+            solution[0] = row;
+            solution[1] = col;
+            return solution;
+        }
+
         static void GuessCordinate()
         {
-            Console.Write("Adja meg a kiválasztott sor számát: ");
-            int row = Convert.ToInt32(Console.ReadLine());
-            Console.Write("Adja meg a kiválasztott oszlop számát: ");
-            int col = Convert.ToInt32(Console.ReadLine());
+            int row = RequestRowFromPlayer();
+            int col = RequestColFromPlayer();
             if (board.grid[row, col].isVisited)
             {
                 board.VisalizeBoard("normal");
@@ -54,13 +76,59 @@ namespace Minesweeper
             }
             else if (board.grid[row, col].neighbours > 0)
             {
-                // TODO
+                board.grid[row, col].isVisited = true;
+                board.VisalizeBoard("normal");
+                return;
             }
             else    // ha ures cellara nyomtunk, akkor az osszes szomszédos ures cella minden szomszedjat meg kell jeleniteni.
             {
+                board.grid[row, col].isVisited = true;
                 // TODO
+                board.VisalizeBoard("normal");
+                return;
             }
+        }
 
+        static int RequestRowFromPlayer()
+        {
+            bool wrongAnswer = true;
+            int row = 0;
+            while (wrongAnswer)
+            {
+                try // row
+                {
+                    Console.Write("Adja meg a kiválasztott sor számát: ");
+                    row = Convert.ToInt32(Console.ReadLine()) - 1;
+                    if (row >= size) { continue; }
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+                wrongAnswer = false;
+            }
+            return row;
+        }
+
+        static int RequestColFromPlayer()
+        {
+            bool wrongAnswer = true;
+            int col = 0;
+            while (wrongAnswer)
+            {
+                try // col
+                {
+                    Console.Write("Adja meg a kiválasztott oszlop számát: ");
+                    col = Convert.ToInt32(Console.ReadLine()) - 1;
+                    if (col >= size) { continue; }
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+                wrongAnswer = false;
+            }
+            return col;
         }
     }
 
@@ -69,7 +137,6 @@ namespace Minesweeper
         public bool isVisited;
         public bool isBomb;
         public int neighbours;
-
 
         public Cell()
         {
@@ -102,7 +169,6 @@ namespace Minesweeper
 
         public void InitializeCells()
         {
-            //Console.WriteLine("Board Initializing...");
             for (int i = 0; i < this.size; i++)
             {
                 for (int j = 0; j < this.size; j++)
@@ -110,36 +176,38 @@ namespace Minesweeper
                     this.grid[i, j] = new Cell();
                 }
             }
-            //Console.WriteLine("Board Init complete.");
         }
 
-        public void PlaceBombs()
+        public void PlaceBombs(int[] startCoords)
         {
-            //Console.Write("Planting bombs...");
             int bombs = Convert.ToInt32(Math.Round((this.size * this.size) * this.difficulty));
-            //Console.WriteLine("({0})", bombs.ToString());
             Random rnd = new Random();
             int row = 0, col = 0;
             for (int i = 0; i < bombs; i++)
             {
                 row = rnd.Next(this.size);
                 col = rnd.Next(this.size);
-                if (!this.grid[row, col].isBomb)
+                if (!this.grid[row, col].isBomb && StartCoord(row, col, startCoords))
                 {
                     this.grid[row, col].Bomb();
-                    //Console.WriteLine("{0}. bomb ({1}, {2})", i.ToString(), row.ToString(), col.ToString());
                 }
                 else
                 {
                     i -=1;
                 }
             }
-            //Console.WriteLine("Bombs have been planted.");
+        }
+
+        public bool StartCoord(int row, int col, int[] startCoords)
+        {
+            if (row != startCoords[0] && col != startCoords[1]) { return true; }
+            if (row != startCoords[0] && col == startCoords[1]) { return true; }
+            if (row == startCoords[0] && col != startCoords[1]) { return true; }
+            return false;
         }
 
         public void SetNeighbourCounts()
         {
-            //Console.WriteLine("Setting up board...");
             for (int i = 0; i < this.size; i++)
             {
                 for (int j = 0; j < this.size; j++)
@@ -150,7 +218,6 @@ namespace Minesweeper
                     }
                 }
             }
-            //Console.WriteLine("Board setup complete.");
         }
 
         public int CountNeighbours(int row, int col)
