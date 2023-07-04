@@ -15,8 +15,8 @@ namespace Minesweeper
     internal class Program
     {
         public static Board board;
-        public static int size = 30;
-        public static float difficulty = .15f;
+        public static int size = 12;
+        public static float difficulty = .15f;          // it's the percentage of bombs on the board.
         public static bool inGame = true;
 
         static void Main(string[] args)
@@ -39,67 +39,103 @@ namespace Minesweeper
 
         static void StartPlay()
         {
+            inGame = true;
             board = new Board(size, difficulty);
             board.InitializeCells();
-            board.VisalizeBoard("normal");
-            board.PlaceBombs(FirstGuess());
+            board.VisualizeBoard("normal");
+            int[] firstGuess = FirstGuess();
+            board.PlaceBombs(firstGuess);
             board.SetNeighbourCounts();
-            board.VisalizeBoard("normal");
+            board.grid[firstGuess[0], firstGuess[1]].isVisited= true;
+            if (board.grid[firstGuess[0], firstGuess[1]].neighbours == 0) { VisitNeighbours(firstGuess[0], firstGuess[1]); }
+            board.VisualizeBoard("normal");
         }
 
         static int[] FirstGuess()
         {
             int[] solution = new int[2];
-            int row = RequestRowFromPlayer();
-            int col = RequestColFromPlayer();
-            board.grid[row, col].isVisited = true;
+            int row = RequestCoordFromPlayer(true);
+            int col = RequestCoordFromPlayer(false);
             solution[0] = row;
             solution[1] = col;
             return solution;
         }
 
+        static List<Cell> cells = new List<Cell>();
+
         static void GuessCordinate()
         {
-            int row = RequestRowFromPlayer();
-            int col = RequestColFromPlayer();
+            int row = RequestCoordFromPlayer(true);
+            int col = RequestCoordFromPlayer(false);
             if (board.grid[row, col].isVisited)
             {
-                board.VisalizeBoard("normal");
+                board.VisualizeBoard("normal");
                 Console.WriteLine("Az adott koordinátát már megvizsgálta!");
                 return;
             }
             else if (board.grid[row, col].isBomb)
             {
-                board.VisalizeBoard("fail");
+                board.VisualizeBoard("fail");
                 inGame = false;
                 return;
             }
             else if (board.grid[row, col].neighbours > 0)
             {
                 board.grid[row, col].isVisited = true;
-                board.VisalizeBoard("normal");
+                board.VisualizeBoard("normal");
                 return;
             }
             else    // ha ures cellara nyomtunk, akkor az osszes szomszédos ures cella minden szomszedjat meg kell jeleniteni.
             {
                 board.grid[row, col].isVisited = true;
-                // TODO
-                board.VisalizeBoard("normal");
+                cells.Clear();
+                VisitNeighbours(row, col);
+                board.VisualizeBoard("normal");
                 return;
             }
         }
+        public static void VisitNeighbours(int row, int col)
+        {
+            for (int i = row-1; i <= row+1; i++)
+            {
+                for (int j = col-1; j <= col+1; j++)
+                {
+                    if (i==row && j==col) {continue;}
+                    try
+                    {
+                        if (!cells.Contains(board.grid[i, j]) && !board.grid[i, j].isVisited)
+                        {
+                            if (board.grid[i, j].neighbours == 0)
+                            {
+                                cells.Add(board.grid[i, j]);
+                                board.grid[i, j].isVisited = true;
+                                VisitNeighbours(i, j);
+                            }
+                            else if (board.grid[i,j].neighbours>0)
+                            {
+                                cells.Add(board.grid[i, j]);
+                                board.grid[i, j].isVisited = true;
+                            }
+                        }
+                    }
+                    catch (IndexOutOfRangeException)
+                    { continue; }
+                }
+            }
+        }
 
-        static int RequestRowFromPlayer()
+        static int RequestCoordFromPlayer(bool isRow)
         {
             bool wrongAnswer = true;
-            int row = 0;
+            int coord = 0;
             while (wrongAnswer)
             {
                 try // row
                 {
-                    Console.Write("Adja meg a kiválasztott sor számát: ");
-                    row = Convert.ToInt32(Console.ReadLine()) - 1;
-                    if (row >= size) { continue; }
+                    if (isRow) { Console.Write("Adja meg a sor számát: "); }
+                    else { Console.Write("Adja meg a kiválasztott oszlop számát: "); }
+                    coord = Convert.ToInt32(Console.ReadLine()) - 1;
+                    if (coord >= size) { continue; }
                 }
                 catch (Exception)
                 {
@@ -107,28 +143,7 @@ namespace Minesweeper
                 }
                 wrongAnswer = false;
             }
-            return row;
-        }
-
-        static int RequestColFromPlayer()
-        {
-            bool wrongAnswer = true;
-            int col = 0;
-            while (wrongAnswer)
-            {
-                try // col
-                {
-                    Console.Write("Adja meg a kiválasztott oszlop számát: ");
-                    col = Convert.ToInt32(Console.ReadLine()) - 1;
-                    if (col >= size) { continue; }
-                }
-                catch (Exception)
-                {
-                    continue;
-                }
-                wrongAnswer = false;
-            }
-            return col;
+            return coord;
         }
     }
 
@@ -159,7 +174,7 @@ namespace Minesweeper
     {
         public int size;
         public Cell[,] grid;
-        public double difficulty;                        // 10 - 90 % kozott
+        public double difficulty;                        // 5 - 25 % kozott ajanlott, utobbi mar nagyon suru
         public Board(int size, float difficulty)
         {
             this.size = size;
@@ -243,7 +258,7 @@ namespace Minesweeper
             return count;
         }
 
-        public void VisalizeBoard(string mode)
+        public void VisualizeBoard(string mode)
         {
             string borderLine = "+";
             for (int i = 0; i < this.size; i++)
