@@ -17,7 +17,7 @@ namespace Minesweeper
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Welcome to my little Minesweeper Clone\nIt's in a early stage, so my programing skill");
+            Console.WriteLine("Welcome to my little Minesweeper Clone\nIt's in an early stage, so my programing skills");
             bool stay = true;
             while (stay)
             {
