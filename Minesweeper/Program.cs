@@ -152,6 +152,7 @@ namespace Minesweeper
         public bool isVisited;
         public bool isBomb;
         public int neighbours;
+        public bool isFlagged = false;
 
         public Cell()
         {
@@ -260,15 +261,17 @@ namespace Minesweeper
 
         public void VisualizeBoard(string mode)
         {
-            string borderLine = "+";
-            for (int i = 0; i < this.size; i++)
+            string coordinates = " ";
+            string borderLine = " +";
+            for (int i = 1; i <= this.size; i++)
             {
+                coordinates += " " + (i % 10).ToString();
                 borderLine += "-+";
             }
-            Console.WriteLine(borderLine);
+            Console.WriteLine(coordinates+"\n"+borderLine);
             for (int i = 0; i < this.size; i++)
             {
-                string line = "|";
+                string line = ((i + 1) % 10).ToString() + "|";
                 for (int j = 0; j < this.size; j++)
                 {
                     switch (mode)
@@ -291,9 +294,11 @@ namespace Minesweeper
                             break;
                     }
                 }
+                line += ((i + 1) % 10).ToString();
                 Console.WriteLine(line);
                 Console.WriteLine(borderLine);
             }
+            Console.WriteLine(coordinates);
         }
     }
 }
