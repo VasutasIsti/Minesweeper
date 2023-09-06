@@ -43,7 +43,10 @@ namespace Minesweeper
             board.PlaceBombs(firstGuess);
             board.SetNeighbourCounts();
             board.grid[firstGuess[0], firstGuess[1]].isVisited= true;
-            if (board.grid[firstGuess[0], firstGuess[1]].neighbours == 0) { VisitNeighbours(firstGuess[0], firstGuess[1]); }
+            if (board.grid[firstGuess[0], firstGuess[1]].neighbours == 0)
+            { 
+                VisitNeighbours(firstGuess[0], firstGuess[1]); 
+            }
             board.VisualizeBoard("normal");
         }
 
